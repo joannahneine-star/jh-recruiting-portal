@@ -7,7 +7,7 @@ A recruiting copilot for a remote-staffing agency. It turns client call notes in
 - **Live portal:** https://jh-recruiting-portal.vercel.app
 - **Portal code:** https://github.com/joannahneine-star/jh-recruiting-portal
 - **Slack:** workspace "Joanna", channel `#recruiting-copilot`, bot `@recruiting`
-- **Loom:** _(add link)_
+- **Loom:** https://www.loom.com/share/7bbab98fd00e42488362a0daa74e7ec0
 
 ---
 
