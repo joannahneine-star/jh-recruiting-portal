@@ -1,0 +1,272 @@
+{
+  "name": "JH - P3 Ask the Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "app_mention"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0CL0CW05LZ",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "ef1e85c1-c348-4a65-8d03-0b9d983861a1",
+      "name": "Slack Trigger",
+      "webhookId": "8b5c1d75-7d40-4127-a0cf-5daaa92ec304",
+      "credentials": {
+        "slackApi": {
+          "id": "UTr5BlgOHQKLO7JM",
+          "name": "Slack account 11"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 895758321,
+          "mode": "list",
+          "cachedResultName": "Candidates",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=895758321"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "532019a6-9e2a-403e-89af-e16ff55ab522",
+      "name": "Get all candidates",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean the question (remove the @mention and bold stars)\nconst question = $('Slack Trigger').first().json.text\n  .replace(/<@[^>]+>/g, '').replace(/\\*/g, '').trim();\n\n// Turn the 54 rows into one simple list (one line per candidate)\nconst rows = $input.all().map(i => i.json);\nconst list = rows.map(r =>\n  `${r.email} | ${r.name} | ${r.role} | ${r.location} | languages: ${r.languages} | skills: ${r.skills} | total years: ${r.years_total} | US hours: ${r.us_hours} | CV file: ${r.cv_file}`\n).join('\\n');\n\nreturn [{ json: { question, list, count: rows.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        0
+      ],
+      "id": "3b38abf1-33ec-46b6-9198-2987d16967cf",
+      "name": "Build candidate list"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"message\": \"Found 3 candidates who match.\",\n  \"candidates\": [\n    {\n      \"email\": \"maya.haddad@example.com\",\n      \"name\": \"Maya Haddad\",\n      \"score\": 92,\n      \"reason\": \"5 years of GoHighLevel, above the 3-year minimum.\\nSpeaks Arabic and French.\"\n    }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        192
+      ],
+      "id": "4bf3e491-4463-4496-b122-57cbf7d58572",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        192
+      ],
+      "id": "f49bbdd5-1b87-44ba-8fa0-330b4401deb4",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "GxImYDQwD5JOrxAg",
+          "name": "JH-Groq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a recruiting assistant. A recruiter asked: \"{{ $json.question }}\"\n\nHere is the ONLY list of candidates you may use ({{ $json.count }} people, one per line):\n{{ $json.list }}\n\nRules:\n1. Only choose people from this list. Never invent anyone.\n2. Only include a candidate if they meet ALL the hard requirements in the question (skills, years, languages, hours). Use the exact years written in their skills.\n3. \"GHL\" means GoHighLevel.\n4. Return at most 5 candidates, best first.\n5. Score each from 0 to 100: meets all requirements = 60 points, how far above the minimum = 25 points, total experience = 15 points. Two people should only get the same score if their facts are the same.\n6. reason = 2 short lines: line 1 = how they meet each requirement (with years), line 2 = one extra strength (total years, other skills, or US hours).\n7. If nobody meets all requirements, return an empty candidates list and explain why in \"message\".",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        48,
+        0
+      ],
+      "id": "c0a867c8-828d-416d-b8b6-a63fa52373cc",
+      "name": "Find top 5",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = $input.first().json.output || {};\nconst rows = $('Get all candidates').all().map(i => i.json);\nconst byEmail = {};\nrows.forEach(r => byEmail[String(r.email).trim().toLowerCase()] = r);\nconst q = $('Build candidate list').first().json.question;\n\n// SAFETY: keep only people who really exist in the database\nconst real = (out.candidates || [])\n  .filter(c => byEmail[String(c.email).trim().toLowerCase()])\n  .slice(0, 5);\n\nlet message;\nif (real.length === 0) {\n  message = `❌ *No good match* for: _${q}_\\n${out.message || 'Nobody in the database meets all the requirements.'}`;\n} else {\n  message = `🔎 *Top ${real.length} for:* _${q}_\\n\\n` + real.map((c, i) => {\n    const r = byEmail[String(c.email).trim().toLowerCase()];\n    return `*${i + 1}. ${r.name}*  –  score *${c.score}/100*\\n${c.reason}\\n📄 CV: ${r.cv_file}`;\n  }).join('\\n\\n');\n}\nreturn [{ json: { message, candidates: real } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "7b82c9a3-1e66-4680-af9d-76bee416a279",
+      "name": "Check and format"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CL0CW05LZ",
+          "mode": "id"
+        },
+        "text": "={{ $json.message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Slack Trigger').first().json.ts }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        640,
+        0
+      ],
+      "id": "9c13d00d-92cf-4e60-9fe8-69bd3aac58f2",
+      "name": "Reply to recruiter",
+      "webhookId": "f9410cc3-1f97-43c0-bef8-ebe518326014",
+      "credentials": {
+        "slackApi": {
+          "id": "UTr5BlgOHQKLO7JM",
+          "name": "Slack account 11"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get all candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all candidates": {
+      "main": [
+        [
+          {
+            "node": "Build candidate list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build candidate list": {
+      "main": [
+        [
+          {
+            "node": "Find top 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Find top 5",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Find top 5",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find top 5": {
+      "main": [
+        [
+          {
+            "node": "Check and format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check and format": {
+      "main": [
+        [
+          {
+            "node": "Reply to recruiter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c244874e-939a-462a-99d1-2bb3b3dda0b3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3005fb383106b154c0cabcf7e6068a406c213ecf488ca0f944eb6a0246db863"
+  },
+  "nodeGroups": [],
+  "id": "dG0YaqxSSUiuryK8",
+  "tags": []
+}

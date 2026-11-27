@@ -1,0 +1,681 @@
+{
+  "name": "JH - P3 Shortlist & Outreach",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://services.leadconnectorhq.com/hooks/yLiKZKvk2CeI2ckIqd1L/webhook-trigger/0d8d78b7-9284-4c5c-af70-61611e509239",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"first_name\": \"{{ $('Decisions').item.json.first_name }}\",\n  \"last_name\": \"{{ $('Decisions').item.json.last_name }}\",\n  \"email\": \"{{ $('Decisions').item.json.ghl_email }}\",\n  \"name\": \"{{ $('Decisions').item.json.name }}\",\n  \"role_id\": \"{{ $('Decisions').item.json.role_id }}\",\n  \"role_title\": \"{{ $('Decisions').item.json.role_title }}\",\n  \"score\": {{ $('Decisions').item.json.score }},\n  \"cv_file\": \"{{ $('Decisions').item.json.cv_file }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2064,
+        16
+      ],
+      "id": "97f384d0-1145-48a4-829c-d579fbfacefa",
+      "name": "Send to GHL"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -400,
+        80
+      ],
+      "id": "6406540e-b3a6-4ca6-9442-d520cd2017ab",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 179565093,
+          "mode": "list",
+          "cachedResultName": "Roles",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=179565093"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "role_id",
+              "lookupValue": "={{ $json.role_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -192,
+        80
+      ],
+      "id": "cac314ce-672c-4b27-9d4c-128ef156c061",
+      "name": "Get role",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 895758321,
+          "mode": "list",
+          "cachedResultName": "Candidates",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=895758321"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        96
+      ],
+      "id": "fca9c6ca-2a63-4f36-88f8-196500e1de9a",
+      "name": "Get all candidates",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const role = $('Get role').first().json;\nconst question = `Find the best candidates for this job:\\n${role.job_description}`;\nconst rows = $input.all().map(i => i.json);\nconst list = rows.map(r =>\n  `${r.email} | ${r.name} | ${r.role} | ${r.location} | languages: ${r.languages} | skills: ${r.skills} | total years: ${r.years_total} | US hours: ${r.us_hours} | CV file: ${r.cv_file}`\n).join('\\n');\nreturn [{ json: { question, list, count: rows.length, role_id: role.role_id, title: role.title || role.role_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        96
+      ],
+      "id": "da063943-8d4d-439e-81a5-440fbb139a65",
+      "name": "Build candidate list"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"message\": \"Found 3 candidates who match.\",\n  \"candidates\": [\n    {\n      \"email\": \"maya.haddad@example.com\",\n      \"name\": \"Maya Haddad\",\n      \"score\": 92,\n      \"reason\": \"5 years of GoHighLevel, above the 3-year minimum.\\nSpeaks Arabic and French.\"\n    }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        272
+      ],
+      "id": "8156c0f9-8c0c-49cd-b4a0-67ea6da06cb8",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        320,
+        272
+      ],
+      "id": "368f0da4-fe27-4df5-b28b-620bd4963bb1",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "GxImYDQwD5JOrxAg",
+          "name": "JH-Groq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a recruiting assistant. A recruiter asked: \"{{ $json.question }}\"\n\nHere is the ONLY list of candidates you may use ({{ $json.count }} people, one per line):\n{{ $json.list }}\n\nRules:\n1. Only choose people from this list. Never invent anyone.\n2. ONLY the lines under \"Must have\" are requirements. Responsibilities are NOT requirements. A candidate meets a must-have if their CV data shows it: years of experience = their total years in that role; a tool (e.g. Excel) = that tool appears in their skills. Skip must-haves a CV cannot show (tests, attitude, \"accuracy\"). \"Nice to have\" items and matching responsibilities only add points. Ignore anything \"Not specified\".\n3. \"GHL\" means GoHighLevel.\n4. Return at most 5 candidates, best first.\n5. Score each from 0 to 100: meets all requirements = 60 points, how far above the minimum = 25 points, total experience = 15 points. Two people should only get the same score if their facts are the same.\n6. reason = 2 short lines: line 1 = how they meet each requirement (with years), line 2 = one extra strength (a nice-to-have, total years, or US hours).\n7. If nobody meets all requirements, return an empty candidates list and explain why in \"message\".",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        384,
+        112
+      ],
+      "id": "a68e15ee-0e1e-4740-a4ab-9f4413511153",
+      "name": "Find top 5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = $input.first().json.output || {};\nconst rows = $('Get all candidates').all().map(i => i.json);\nconst byEmail = {};\nrows.forEach(r => byEmail[String(r.email).trim().toLowerCase()] = r);\nconst role = $('Build candidate list').first().json;\n\n// SAFETY: keep only real people, and take name + CV file from the Sheet\nconst real = (out.candidates || [])\n  .filter(c => byEmail[String(c.email).trim().toLowerCase()])\n  .slice(0, 5)\n  .map(c => {\n    const r = byEmail[String(c.email).trim().toLowerCase()];\n    return { email: r.email, name: r.name, score: c.score, reason: c.reason, cv_file: r.cv_file };\n  });\n\nlet message;\nif (real.length === 0) {\n  message = `❌ *No good match* for *${role.title}* (${role.role_id}).\\n${out.message || 'Nobody meets all the must-have requirements.'}`;\n} else {\n  message = `📋 *Shortlist for ${role.title}* (${role.role_id})\\n\\n` + real.map((c, i) =>\n    `*${i + 1}. ${c.name}*  –  score *${c.score}/100*\\n${c.reason}\\n📄 CV: ${c.cv_file}`\n  ).join('\\n\\n') + `\\n\\n👉 Choose who to contact in the form below.`;\n}\nreturn [{ json: { message, candidates: real, role_id: role.role_id, title: role.title } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        112
+      ],
+      "id": "cafc6291-3b93-4648-8de1-f0d899abe633",
+      "name": "Check and format"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "4d24e57f-7990-4dc7-bcf7-68334f55467e",
+              "leftValue": "={{ $json.candidates.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        128
+      ],
+      "id": "e46103f0-7206-4b14-86ea-7a9e307d9a2d",
+      "name": "Any candidates?"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CL0CW05LZ",
+          "mode": "id"
+        },
+        "text": "={{ $json.message }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1120,
+        224
+      ],
+      "id": "d63e3811-aace-40f9-91c1-fb592892a065",
+      "name": "Tell no match",
+      "webhookId": "4a16749d-7de3-4ff2-9b69-6a3c12af0444",
+      "credentials": {
+        "slackApi": {
+          "id": "UTr5BlgOHQKLO7JM",
+          "name": "Slack account 11"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CL0CW05LZ",
+          "mode": "id"
+        },
+        "message": "={{ $json.message }}",
+        "responseType": "customForm",
+        "defineForm": "json",
+        "jsonOutput": "={{ JSON.stringify([{ fieldLabel: \"Candidates to contact\", fieldType: \"dropdown\", multiselect: true, requiredField: true, fieldOptions: { values: $json.candidates.map(c => ({ option: c.name + ' | ' + c.email })) } }]) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1120,
+        32
+      ],
+      "id": "f8be1990-1b66-4aa1-b9c4-6c157e19884e",
+      "name": "Recruiter picks candidates",
+      "webhookId": "c35e5feb-9c82-46f8-8f3b-f50790a434d0",
+      "credentials": {
+        "slackApi": {
+          "id": "UTr5BlgOHQKLO7JM",
+          "name": "Slack account 11"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sh = $('Check and format').first().json;\nlet picked = ($input.first().json.data || {})['Candidates to contact'] || [];\nif (!Array.isArray(picked)) picked = [picked];\nconst pickedEmails = picked.map(p => String(p).split('|').pop().trim().toLowerCase());\n\n// For the Loom demo: put your Gmail here (e.g. 'joannahneine@gmail.com'), or leave '' for real emails\nconst DEMO_EMAIL = 'joannahneine@gmail.com';\n\nreturn sh.candidates.map(c => {\n  const [first, ...rest] = c.name.split(' ');\n  const approved = pickedEmails.includes(c.email.toLowerCase());\n  const ghl_email = DEMO_EMAIL ? DEMO_EMAIL.replace('@', '+' + first.toLowerCase() + '@') : c.email;\n  return { json: {\n    role_id: sh.role_id, role_title: sh.title,\n    candidate_email: c.email, name: c.name, first_name: first, last_name: rest.join(' '),\n    score: c.score, reason: c.reason, cv_file: c.cv_file,\n    approved: approved ? 'Yes' : 'No', ghl_email\n  }};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        32
+      ],
+      "id": "5c1aca92-c2c9-4186-8865-c89c0aaabf30",
+      "name": "Decisions"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1307124526,
+          "mode": "list",
+          "cachedResultName": "Shortlists",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=1307124526"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "role_id": "={{ $json.role_id }}",
+            "candidate_email": "={{ $json.candidate_email }}",
+            "name": "={{ $json.name }}",
+            "score": "={{ $json.score }}",
+            "reason": "={{ $json.reason }}",
+            "cv_file": "={{ $json.cv_file }}",
+            "approved": "={{ $json.approved }}",
+            "stage": "={{ $json.approved === 'Yes' ? 'Approved' : 'Not selected' }}",
+            "ghl_email": "={{ $json.ghl_email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "role_id",
+              "displayName": "role_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "candidate_email",
+              "displayName": "candidate_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cv_file",
+              "displayName": "cv_file",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved",
+              "displayName": "approved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "stage",
+              "displayName": "stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ghl_email",
+              "displayName": "ghl_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        32
+      ],
+      "id": "3a4fe9ba-fcff-4a36-b9ee-dbe8cc3f8e45",
+      "name": "Save shortlist",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "2433c5b4-525e-4657-a353-db747fe0a2ac",
+              "leftValue": "={{ $('Decisions').item.json.approved }}",
+              "rightValue": "=Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1792,
+        32
+      ],
+      "id": "4a899a42-0b4e-4338-99c9-c2cf53ebcbcd",
+      "name": "Approved?"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CL0CW05LZ",
+          "mode": "id"
+        },
+        "text": "=✅ *Outreach started for {{ $('Decisions').first().json.role_title }}*\n{{ $('Decisions').all().filter(i => i.json.approved === 'Yes').map(i => '• ' + i.json.name).join('\\n') }}\nThey are now in GHL (stage: Approved) and will receive the email sequence.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2288,
+        16
+      ],
+      "id": "185d35a5-df0e-4e1d-8a6a-9d7493b14551",
+      "name": "Confirm outreach",
+      "webhookId": "cfad253c-9390-4ec2-a491-e88b7813cbc8",
+      "executeOnce": true,
+      "credentials": {
+        "slackApi": {
+          "id": "UTr5BlgOHQKLO7JM",
+          "name": "Slack account 11"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "role_id": "05_RossPatel_Bookkeeper"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all candidates": {
+      "main": [
+        [
+          {
+            "node": "Build candidate list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build candidate list": {
+      "main": [
+        [
+          {
+            "node": "Find top 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Find top 5",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Find top 5",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find top 5": {
+      "main": [
+        [
+          {
+            "node": "Check and format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get role": {
+      "main": [
+        [
+          {
+            "node": "Get all candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check and format": {
+      "main": [
+        [
+          {
+            "node": "Any candidates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any candidates?": {
+      "main": [
+        [
+          {
+            "node": "Recruiter picks candidates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tell no match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recruiter picks candidates": {
+      "main": [
+        [
+          {
+            "node": "Decisions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decisions": {
+      "main": [
+        [
+          {
+            "node": "Save shortlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save shortlist": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Send to GHL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to GHL": {
+      "main": [
+        [
+          {
+            "node": "Confirm outreach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2948bef9-958b-41c0-b76d-a1e2bea65f2b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3005fb383106b154c0cabcf7e6068a406c213ecf488ca0f944eb6a0246db863"
+  },
+  "nodeGroups": [],
+  "id": "COonniFNz00sLOUS",
+  "tags": []
+}

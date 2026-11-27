@@ -1,0 +1,556 @@
+{
+  "name": "JH - P3 Transcript to JD",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1fJvXo_wy70Ct_Y-k91k4Qr7eCKFMZpKJ",
+          "mode": "list",
+          "cachedResultName": "Transcripts",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1fJvXo_wy70Ct_Y-k91k4Qr7eCKFMZpKJ"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fc712e85-6ac0-4bc5-8ac6-dbf00f9e6251",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xvboHW1l3yjD6TVh",
+          "name": "JH - Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "41380330-5f7e-487d-9062-24e8c717c2ae",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xvboHW1l3yjD6TVh",
+          "name": "JH - Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "b8fcd4a4-2ccc-481b-90a5-81496bcb7f97",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a recruiter at a remote-staffing agency. Write a job description using ONLY the facts in this client call. Never invent details. If something was not said, write \"Not specified\". If the client changed their mind during the call, use the final answer.\n\nUse exactly this format:\n*Job Title:*\n*Client:*\n*About the role:* (2 sentences)\n*Responsibilities:* (bullet points)\n*Must have:* (bullet points)\n*Nice to have:* (bullet points)\n*Hours / time zone:*\n*Pay:*\n*Start date:*\n\nClient call:\n{{ $json.data }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        672,
+        0
+      ],
+      "id": "9840b32e-c4d9-41bd-a97e-69ea74f611f3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "=models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        208
+      ],
+      "id": "89d230be-36d5-4fec-a5db-6bd57b7abd1f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "32TUSFw7zuzVDfSa",
+          "name": "JH-Gemini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 179565093,
+          "mode": "list",
+          "cachedResultName": "Roles",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=179565093"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "role_id": "={{ $('Google Drive Trigger').item.json.name }}",
+            "title": "={{ $('Google Drive Trigger').item.json.name.split('_').slice(2).join(' ') }}",
+            "client": "={{ $('Google Drive Trigger').item.json.name.split('_')[1] }}",
+            "job_description": "={{ $json.text }}",
+            "status": "Waiting for approval"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "role_id",
+              "displayName": "role_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "client",
+              "displayName": "client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_description",
+              "displayName": "job_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "ba58796f-d5ed-48c5-a800-26e3950558bc",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CL0CW05LZ",
+          "mode": "id"
+        },
+        "message": "=*📄 New job description – please review*\n\n{{ $('Basic LLM Chain').item.json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "1ccd0afe-226c-4ee2-9711-6ac3c39a0691",
+      "name": "Ask recruiter to approve",
+      "webhookId": "8fe07f44-0668-4f1e-9556-21c1b6d06043",
+      "credentials": {
+        "slackApi": {
+          "id": "UTr5BlgOHQKLO7JM",
+          "name": "Slack account 11"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 179565093,
+          "mode": "list",
+          "cachedResultName": "Roles",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=179565093"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "role_id": "={{ $('Google Drive Trigger').item.json.name }}",
+            "client": "=",
+            "title": "=",
+            "approved_at": "={{ $json.data.approved ? $now.toFormat('yyyy-MM-dd HH:mm') : '' }}",
+            "status": "={{ $json.data.approved ? 'Approved' : 'Rejected' }}"
+          },
+          "matchingColumns": [
+            "role_id"
+          ],
+          "schema": [
+            {
+              "id": "role_id",
+              "displayName": "role_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "client",
+              "displayName": "client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "job_description",
+              "displayName": "job_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1488,
+        0
+      ],
+      "id": "195f4a73-5773-4dfd-8d31-a50de23cbbc8",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "afedac76-4ebb-43f3-9f1f-ae8a8e68bcee",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "Approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "4cfdbec2-f520-4481-9720-6fec49a42428",
+      "name": "JD approved?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "COonniFNz00sLOUS",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/COonniFNz00sLOUS",
+          "cachedResultName": "JH - P3 Shortlist & Outreach"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1920,
+        -160
+      ],
+      "id": "696f7fd0-aa17-4838-add1-e876ea3ff9c0",
+      "name": "Call 'JH - P3 Shortlist & Outreach'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Ask recruiter to approve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask recruiter to approve": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "JD approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JD approved?": {
+      "main": [
+        [
+          {
+            "node": "Call 'JH - P3 Shortlist & Outreach'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7c78ed9d-6481-4cec-88f7-1953032c2af7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3005fb383106b154c0cabcf7e6068a406c213ecf488ca0f944eb6a0246db863"
+  },
+  "nodeGroups": [],
+  "id": "i7aXfzfrAOvyMX3j",
+  "tags": []
+}

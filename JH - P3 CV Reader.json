@@ -1,0 +1,885 @@
+{
+  "name": "JH - P3 CV Reader",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1MDLRtbI01T0Gvfc-l-Hc1UDnrEHqIbMU",
+          "mode": "list",
+          "cachedResultName": "CVs",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1MDLRtbI01T0Gvfc-l-Hc1UDnrEHqIbMU"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -16
+      ],
+      "id": "652f7c4b-f0a3-4fd7-9890-643ffb284b7d",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xvboHW1l3yjD6TVh",
+          "name": "JH - Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -144,
+        -16
+      ],
+      "id": "a46f7990-3e3a-4d59-af93-30f9627d045e",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xvboHW1l3yjD6TVh",
+          "name": "JH - Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "175b8ff7-3b8c-4c79-b5b5-5c1c12150e74",
+              "leftValue": "={{ $('Google Drive Trigger').item.json.mimeType }}",
+              "rightValue": "=application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        48,
+        -16
+      ],
+      "id": "a8359ad6-8571-4282-add9-37e2350a23cf",
+      "name": "Is it a PDF?"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        336,
+        -224
+      ],
+      "id": "e20256cd-7e6a-4732-87e3-d2ccabc81d9b",
+      "name": "Read PDF"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b2c44073-a12a-43e3-b875-b784f19e3966",
+              "name": "cv_text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "73dd18a9-c5d5-402a-86a0-eb557746f0ba",
+              "name": "file_name",
+              "value": "={{ $('Google Drive Trigger').item.json.name.replace('Copy of ', '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        496,
+        -304
+      ],
+      "id": "1c36200d-efd6-4da8-8078-38009a3f7a70",
+      "name": "PDF text"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        112
+      ],
+      "id": "45692726-2ed1-412f-b065-5b5cf69a2aec",
+      "name": "Read Word"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "98a381fa-bb3c-45ac-b0d3-2190db009365",
+              "name": "cv_text",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "22fee129-96be-4ce2-8956-77643e188d1c",
+              "name": "=file_name",
+              "value": "={{ $('Google Drive Trigger').item.json.name.replace('Copy of ', '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        416,
+        64
+      ],
+      "id": "439e247c-076a-4ddc-b3c7-0f339fa445eb",
+      "name": "Word text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "32dfa9af-7632-40e2-8ee8-62d474231c5e",
+              "leftValue": "={{ ($json.cv_text || '').trim().length }}",
+              "rightValue": 100,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        736,
+        64
+      ],
+      "id": "8a6d2d03-8c8e-4cf5-938f-1bbc539d2709",
+      "name": "Readable?"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1857767847,
+          "mode": "list",
+          "cachedResultName": "Flags",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=1857767847"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "file_name": "={{ $json.file_name }}",
+            "problem": "Unreadable CV - no text found (scanned image?)",
+            "date": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "file_name",
+              "displayName": "file_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "problem",
+              "displayName": "problem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        800,
+        432
+      ],
+      "id": "74add688-6df5-4c51-917e-e22598de3658",
+      "name": "Save flag",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CL0CW05LZ",
+          "mode": "id"
+        },
+        "text": "=⚠️ *CV could not be read:* {{ $('Readable?').item.json.file_name }}\nIt looks like a scanned image. Please ask the candidate for a PDF or Word version.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1008,
+        432
+      ],
+      "id": "3dc0bd9d-ec3f-4e27-bd6d-07f8e992c5bb",
+      "name": "Alert recruiter",
+      "webhookId": "b1088c15-066a-4e78-837c-54dc2e874981",
+      "credentials": {
+        "slackApi": {
+          "id": "UTr5BlgOHQKLO7JM",
+          "name": "Slack account 11"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract the candidate's details from this CV. Use ONLY what is written in the CV. Never guess or invent. If something is missing, write \"Not stated\" (or 0 for numbers).\n\nRules:\n- name: write it in normal case, like \"Ahmed Barakat\"\n- skills: every tool or skill with its years, like \"GoHighLevel (5 yrs); Zapier (4 yrs)\"\n- years_total: total years of work experience, as a number\n- us_hours: write \"yes\" ONLY if the CV literally says the person can work US hours (for example \"Available to work US Eastern hours\"). If the CV does not say it, write \"no\".\n- cv_date: the year this CV was written. If the file name contains a year, use it. Otherwise use the most recent year in the CV, and count \"Present\" as 2026.\n\nFile name: {{ $json.file_name }}\n\nCV:\n{{ $json.cv_text }}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        960,
+        -176
+      ],
+      "id": "5eaa875f-fb4a-4ab4-a9f7-716cab7bb792",
+      "name": "Read CV with AI",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"email\": \"maya.haddad@example.com\",\n  \"name\": \"Maya Haddad\",\n  \"role\": \"GoHighLevel Automation Specialist\",\n  \"location\": \"Beirut, Lebanon\",\n  \"languages\": \"English, Arabic, French\",\n  \"skills\": \"GoHighLevel (5 yrs); Zapier (4 yrs)\",\n  \"years_total\": 6,\n  \"us_hours\": \"yes\",\n  \"summary\": \"One short sentence about the candidate\",\n  \"cv_date\": 2026\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        48
+      ],
+      "id": "4a88dbd4-785a-4610-959d-7998da5c5be0",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 895758321,
+          "mode": "list",
+          "cachedResultName": "Candidates",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=895758321"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $json.output.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1328,
+        -176
+      ],
+      "id": "13207c43-ce92-4357-9373-3b683fd37579",
+      "name": "Find existing candidate",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "95f0951d-8e8e-4f30-85f1-052c94ca26d4",
+              "leftValue": "={{ !$json.cv_date || Number($('Read CV with AI').item.json.output.cv_date) >= Number($json.cv_date) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1552,
+        -176
+      ],
+      "id": "6a6d8d97-b67b-4251-acc3-900bb3f0d1cd",
+      "name": "New or newer CV?"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE",
+          "mode": "list",
+          "cachedResultName": "Recruiting Copilot DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 895758321,
+          "mode": "list",
+          "cachedResultName": "Candidates",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19dbcwHbOjdj9GtQ-_vxpWAMsZ-Pd_N1QKZ4HcnebTbE/edit#gid=895758321"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Read CV with AI').item.json.output.email }}",
+            "name": "={{ $('Read CV with AI').item.json.output.name }}",
+            "role": "={{ $('Read CV with AI').item.json.output.role }}",
+            "location": "={{ $('Read CV with AI').item.json.output.location }}",
+            "languages": "={{ $('Read CV with AI').item.json.output.languages }}",
+            "skills": "={{ $('Read CV with AI').item.json.output.skills }}",
+            "years_total": "={{ $('Read CV with AI').item.json.output.years_total }}",
+            "us_hours": "={{ $('Read CV with AI').item.json.output.us_hours }}",
+            "summary": "={{ $('Read CV with AI').item.json.output.summary }}",
+            "cv_file": "={{ $('Loop Over Items').item.json.file_name }}",
+            "cv_date": "={{ $('Read CV with AI').item.json.output.cv_date }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "role",
+              "displayName": "role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "location",
+              "displayName": "location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "languages",
+              "displayName": "languages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "skills",
+              "displayName": "skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "years_total",
+              "displayName": "years_total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "us_hours",
+              "displayName": "us_hours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cv_file",
+              "displayName": "cv_file",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cv_date",
+              "displayName": "cv_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1776,
+        -272
+      ],
+      "id": "f45494b2-a1c5-43b8-8ef4-b56984517b23",
+      "name": "Save candidate",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "p0iYdpv6En69Iy0E",
+          "name": "JH - Google Sheets"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1968,
+        144
+      ],
+      "id": "7688cfe3-3eaf-4e7a-976f-b176ad8fc7ff",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "model": "=openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        976,
+        48
+      ],
+      "id": "642565a2-4191-4892-a64b-9b2b37f81acd",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "GxImYDQwD5JOrxAg",
+          "name": "JH-Groq"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        -272
+      ],
+      "id": "518e7fb9-5569-45e0-94d8-835c0367e445",
+      "name": "Wait",
+      "webhookId": "b3f5f18d-a6d0-4435-8154-f5e7c5d7bed2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        736,
+        -304
+      ],
+      "id": "bdd73662-da34-4644-801b-c0ff00623b6a",
+      "name": "Join PDF + Word"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Is it a PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is it a PDF?": {
+      "main": [
+        [
+          {
+            "node": "Read PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Word",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read PDF": {
+      "main": [
+        [
+          {
+            "node": "PDF text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Word": {
+      "main": [
+        [
+          {
+            "node": "Word text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Word text": {
+      "main": [
+        [
+          {
+            "node": "Join PDF + Word",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "PDF text": {
+      "main": [
+        [
+          {
+            "node": "Join PDF + Word",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Readable?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save flag": {
+      "main": [
+        [
+          {
+            "node": "Alert recruiter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Read CV with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read CV with AI": {
+      "main": [
+        [
+          {
+            "node": "Find existing candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find existing candidate": {
+      "main": [
+        [
+          {
+            "node": "New or newer CV?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New or newer CV?": {
+      "main": [
+        [
+          {
+            "node": "Save candidate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Read CV with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save candidate": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Read CV with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Join PDF + Word": {
+      "main": [
+        [
+          {
+            "node": "Readable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "493e420f-ad28-4584-a553-13337b9620b2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3005fb383106b154c0cabcf7e6068a406c213ecf488ca0f944eb6a0246db863"
+  },
+  "nodeGroups": [],
+  "id": "SR3Av2mFkmp6Afoe",
+  "tags": []
+}
